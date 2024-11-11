@@ -1,0 +1,11 @@
+import time
+import requests
+
+def simulate_sensor_updates():
+    while True:
+        spot_id = 1  # Assuming we are updating spot with ID 1
+        response = requests.post("http://localhost:5000/reserve", json={'id': spot_id})
+        print(f"Spot {spot_id} reserved: {response.json()}")
+        time.sleep(5)
+
+simulate_sensor_updates()
