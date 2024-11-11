@@ -1,0 +1,70 @@
+import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: ParkingSpotsScreen(),
+    );
+  }
+}
+
+class ParkingSpotsScreen extends StatefulWidget {
+  @override
+  _ParkingSpotsScreenState createState() => _ParkingSpotsScreenState();
+}
+
+class _ParkingSpotsScreenState extends State<ParkingSpotsScreen> {
+  List<dynamic> spots = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSpots();
+  }
+
+  Future<void> fetchSpots() async {
+    final response = await http.get(Uri.parse('http://localhost:5000/spots'));
+    if (response.statusCode == 200) {
+      setState(() {
+        spots = json.decode(response.body);
+      });
+    }
+  }
+
+  Future<void> reserveSpot(int id) async {
+    final response = await http.post(Uri.parse('http://localhost:5000/reserve'),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({'id': id}));
+    if (response.statusCode == 200) {
+      fetchSpots();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Smart Parking")),
+      body: ListView.builder(
+        itemCount: spots.length,
+        itemBuilder: (context, index) {
+          final spot = spots[index];
+          return ListTile(
+            title: Text(spot['location']),
+            subtitle: Text(spot['available'] ? 'Available' : 'Reserved'),
+            trailing: spot['available']
+                ? IconButton(
+                    icon: Icon(Icons.check),
+                    onPressed: () => reserveSpot(spot['id']),
+                  )
+                : null,
+          );
+        },
+      ),
+    );
+  }
+}
