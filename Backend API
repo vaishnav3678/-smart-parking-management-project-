@@ -1,0 +1,30 @@
+from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///parking.db'
+db = SQLAlchemy(app)
+
+class ParkingSpot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    location = db.Column(db.String(100), nullable=False)
+    available = db.Column(db.Boolean, default=True)
+
+@app.route('/spots', methods=['GET'])
+def get_spots():
+    spots = ParkingSpot.query.all()
+    return jsonify([{'id': spot.id, 'location': spot.location, 'available': spot.available} for spot in spots])
+
+@app.route('/reserve', methods=['POST'])
+def reserve_spot():
+    spot_id = request.json.get('id')
+    spot = ParkingSpot.query.get(spot_id)
+    if spot and spot.available:
+        spot.available = False
+        db.session.commit()
+        return jsonify({'status': 'Reserved'})
+    return jsonify({'status': 'Unavailable or not found'})
+
+if __name__ == '__main__':
+    db.create_all()
+    app.run(debug=True)
